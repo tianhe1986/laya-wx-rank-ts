@@ -1,5 +1,6 @@
-set srcDir=E:\laya_workspace\laya-wx-rank-ts\open-data\release\wxgame
-set dstDir=E:\laya_workspace\laya-wx-rank-ts\wxgame\src\openDataContext
+cd /d %~dp0
+set srcDir=release\wxgame
+set dstDir=..\wxgame\src\openDataContext
 
 del /f /s /q %srcDir%\res\*.*
 rd /s /q %srcDir%\res

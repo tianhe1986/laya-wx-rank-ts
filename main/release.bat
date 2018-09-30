@@ -1,6 +1,7 @@
-set binDir=E:\laya_workspace\laya-wx-rank-ts\main\bin
-set srcDir=E:\laya_workspace\laya-wx-rank-ts\main\release\wxgame
-set dstDir=E:\laya_workspace\laya-wx-rank-ts\wxgame
+cd /d %~dp0
+set binDir=bin
+set srcDir=release\wxgame
+set dstDir=..\wxgame
 ::删除小游戏用不到的目录
 del /f /s /q %srcDir%\libs\*.*
 rd /s /q %srcDir%\libs

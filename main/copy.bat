@@ -1,4 +1,5 @@
 :: 拷贝rank
-mkdir E:\laya_workspace\laya-wx-rank-ts\main\bin\rankRes
-copy E:\laya_workspace\laya-wx-rank-ts\main\bin\res\atlas\rank.atlas E:\laya_workspace\laya-wx-rank-ts\main\bin\rankRes\rank.atlas /Y
-copy E:\laya_workspace\laya-wx-rank-ts\main\bin\res\atlas\rank.png E:\laya_workspace\laya-wx-rank-ts\main\bin\rankRes\rank.png /Y
+cd /d %~dp0
+mkdir bin\rankRes
+copy bin\res\atlas\rank.atlas bin\rankRes\rank.atlas /Y
+copy bin\res\atlas\rank.png bin\rankRes\rank.png /Y
