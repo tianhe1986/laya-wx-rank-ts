@@ -16,5 +16,62 @@ Layabox(windows版本，因为没钱买苹果)开发的微信小游戏排行榜d
 
 # 代码说明
 ### 基础实现
+这个其实在社区里有不少文章说过了，但是在这里我还是重复讲一遍吧。
+首先，大家都知道肯定是需要两个项目的，一个对应小游戏的主域，另一个对应小游戏的开放数据域（子域）。
+main文件夹，对应主域，初始化的时候用 <code>Laya.MiniAdpter.init(true, false);</code>，表示是主域，并自动将加载的文本数据自动传递到子域。
+而open-data对应子域，初始化时用 <code>Laya.MiniAdpter.init(true, true);;</code>，其实我觉得第一个参数没啥用，关键是第二个参数表示它是子域。
+
+---
+在主域中，做了以下几件事：
+* 设置共享画布，根据小游戏的文档，它的宽高只能在主域设置，不能在开放数据域中设置，我这里使用了如下的代码：
+```
+let wx = Laya.Browser.window.wx;
+Laya.timer.once(1000, this, () => {
+    //设置共享画布大小
+    let sharedCanvas = wx.getOpenDataContext().canvas;
+    sharedCanvas.width = Laya.stage.width;
+    sharedCanvas.height = Laya.stage.height;
+    //主域往子域透传消息
+    wx.postMessage({type:"resizeShared",url:"",data:{width:Laya.stage.width,height:Laya.stage.height,matrix:Laya.stage._canvasTransform},isLoad:false});
+    Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
+    Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
+});
+```
+* 绘制离屏画布，我在这里是把它放在了页面里，首先创建了一个Sprite组件，并设置它的var为openDataCanvas，然后，在View初始化时使用如下代码：
+```
+let texture:Laya.Texture = new Laya.Texture(Laya.Browser.window.sharedCanvas);
+texture.bitmap.alwaysChange = true;//小程序使用，非常费，这个参数可以根据自己的需求适当调整，如果内容不变可以不用设置成true
+this.openDataCanvas.graphics.drawTexture(texture, 0, 0, texture.width, texture.height);
+```
+* 控制离屏画布的显示和隐藏，有了上面的openDataCanvas，直接设置它的visible属性就好。然后在显示的同时，向子域发送刷新数据的命令（参考下方子域接收命令的说明），以下是部分代码：
+```
+protected postMessage(item:Object):void
+{
+    if (Laya.Browser.onMiniGame) {
+        let wx = Laya.Browser.window.wx;
+        let openDataContext = wx.getOpenDataContext();
+        openDataContext.postMessage(item);
+    }
+}
+
+public showRankList():void
+{
+    this.rankBox.x = -480;
+    this.openDataCanvas.x = -471;
+    this.rankBox.visible = true;
+    this.openDataCanvas.visible = true;
+
+    Laya.Tween.to(this.rankBox, {"x": 0}, 200);
+    Laya.Tween.to(this.openDataCanvas, {"x": 0}, 200);
+
+    this.postMessage({
+        cmd: 'showRank',
+    });
+}
+```
+
+---
+在子域中，做了以下几件事：
+* 
 
 ### 版本管理&图集使用
