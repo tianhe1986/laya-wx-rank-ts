@@ -71,7 +71,75 @@ public showRankList():void
 ```
 
 ---
-在子域中，做了以下几件事：
-* 
+在子域中，主要就是一件事，接收主域的命令并处理，在这里，我把它分为系统需要的部分和自定义部分。
+* 系统需要部分，主要就是缓存文件数据和重设渲染canvas。
+* 自定义部分，主要是处理关系链数据及绘制。
+示例代码如下：
+```
+wx.onMessage(data => {
+    let MiniFileMgr = laya.wx.mini.MiniFileMgr;
+    //console.log(data);
+    if (data.cmd != undefined) {
+        if (data.cmd == 'addScore') {
+            this.increaseWeekScore();
+        } else if (data.cmd == 'showRank') {
+            (this.rankView as views.Rank).showRankList();
+        } else if (data.cmd == 'hideRank') {
+
+        } else if (data.cmd == 'loadRes') {
+            this.loadResource();
+        }
+    } else {
+        if (data['isLoad'] == "filedata") {
+            MiniFileMgr.ziyuFileData[data.url] = data.data;//文本数据
+        } else if (data['isLoad'] == "filenative") {
+            if(data.isAdd)
+                MiniFileMgr.filesListObj[data.url] = data.data;
+            else
+                delete MiniFileMgr.filesListObj[data.url];
+        } else if (data['type'] == "resizeShared") {
+            let tempMatrix = data.data.matrix;
+            let matrix:Laya.Matrix = new Laya.Matrix();
+            matrix.a = tempMatrix.a;
+            matrix.b = tempMatrix.b;
+            matrix.c = tempMatrix.c;
+            matrix.d = tempMatrix.d;
+            Laya.stage._canvasTransform = matrix;//重新设置矩阵
+        }
+    }
+});
+```
 
 ### 版本管理&图集使用
+主域使用版本管理，子域不使用，当主域自动把atlas内容通过消息传给子域后，子域再去加载资源。
+
+主域中，资源加载完成后，将atlas内容传给子域。因为使用了版本管理，因此系统自动的传递，子域接收到后对应的URL是不正确的，所以需要手动再传一次，如下：
+```
+protected loadOpenDataResource():void
+{
+    Laya.loader.load("rankRes/rank.atlas", Laya.Handler.create(this, this.openDataHandle), null, Laya.Loader.ATLAS);
+}
+
+protected openDataHandle():void
+{
+    if (Laya.Browser.onMiniGame) {
+        let wx = Laya.Browser.window.wx;
+        let urlArr = ["rankRes/rank.atlas"];
+        for (let i = 0; i < urlArr.length; i++) {
+            wx.postMessage({url:urlArr[i], data:Laya.loader.getRes(urlArr[i]),isLoad:"filedata"});
+        }
+        wx.postMessage({cmd:"loadRes"});
+    }
+    this.loadResource();
+}
+```
+
+子域收到loadRes的消息后，才开始加载资源。
+但是这里还有一个问题，在主域，加载atlas之后，再加载对应的png文件，也是带着版本号的，而在子域中，是直接加载不带版本号的png文件。
+所以，我在这里多做了一个操作，将原始不带版本号的png文件拷贝了一份，放在同一个文件夹下。
+我以rank.atlas和rank.png为例，将它们从res文件夹中拷贝出来，放在单独rankRes文件夹中，就是发布图集之后执行copy.bat做的事情,然后进行加载。
+当然，直接将它们从bin/res/atlas文件夹拷贝到release/wxgame/res/atlas文件夹下也是可以的。
+那么，我把它放在单独的文件夹中有什么好处呢？答案是，整个res文件夹，我是放在网上进行加载的，最后发布出来的微信小游戏项目中，res文件夹我是直接删除的，本地和网络加载的文件混在一起，处理起来会有些麻烦:)
+
+# TODO
+研究一下有没有什么开挂的方法，让子域需要的图集也能从网络加载，或者说，主域从网络加载了，同步到子域中。
