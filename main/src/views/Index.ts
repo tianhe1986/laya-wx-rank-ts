@@ -16,6 +16,16 @@ module views{
 			}
 		}
 
+		public showAll():void
+		{
+			this.visible = true;
+		}
+
+		public hideAll():void
+		{
+			this.visible = false;
+		}
+
 		//增加分数
 		protected addScore():void
 		{

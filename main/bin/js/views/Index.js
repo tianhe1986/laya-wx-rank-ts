@@ -26,6 +26,12 @@ var views;
             }
             return _this;
         }
+        Index.prototype.showAll = function () {
+            this.visible = true;
+        };
+        Index.prototype.hideAll = function () {
+            this.visible = false;
+        };
         //增加分数
         Index.prototype.addScore = function () {
             this.postMessage({

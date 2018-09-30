@@ -23,11 +23,10 @@ var Main = /** @class */ (function () {
         Laya.MiniAdpter.init(true, false);
         Laya.init(1334, 750, Laya.WebGL);
         this.initStage();
-        Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
-        Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
     };
     //初始化stage
     Main.prototype.initStage = function () {
+        var _this = this;
         if (Laya.Browser.onMiniGame) {
             var systemInfo = this.getWxSystemInfo();
             if (systemInfo.windowWidth * 750 > systemInfo.windowHeight * 1334) { //宽屏，高度固定
@@ -45,6 +44,23 @@ var Main = /** @class */ (function () {
         Laya.stage.alignV = Laya.Stage.ALIGN_CENTER;
         Laya.stage.alignH = Laya.Stage.ALIGN_CENTER;
         Laya.stage.bgColor = "#627069";
+        if (Laya.Browser.onMiniGame) {
+            var wx_1 = Laya.Browser.window.wx;
+            Laya.timer.once(1000, this, function () {
+                //设置共享画布大小
+                var sharedCanvas = wx_1.getOpenDataContext().canvas;
+                sharedCanvas.width = Laya.stage.width;
+                sharedCanvas.height = Laya.stage.height;
+                //主域往子域透传消息
+                wx_1.postMessage({ type: "resizeShared", url: "", data: { width: Laya.stage.width, height: Laya.stage.height, matrix: Laya.stage._canvasTransform }, isLoad: false });
+                Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
+                Laya.ResourceVersion.enable("version.json", Laya.Handler.create(_this, _this.loadOpenDataResource));
+            });
+        }
+        else {
+            Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
+            Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
+        }
     };
     Main.prototype.loadOpenDataResource = function () {
         Laya.loader.load("rankRes/rank.atlas", Laya.Handler.create(this, this.openDataHandle), null, Laya.Loader.ATLAS);
@@ -68,8 +84,49 @@ var Main = /** @class */ (function () {
         Laya.loader.load(uiResArry, Laya.Handler.create(this, this.loadEnd));
     };
     Main.prototype.loadEnd = function () {
+        var _this = this;
         var indexView = new views.Index();
         Laya.stage.addChild(indexView);
+        if (Laya.Browser.onMiniGame) {
+            var wx_2 = Laya.Browser.window.wx;
+            wx_2.login({
+                success: function (res) {
+                    var code = res.code;
+                    wx_2.getSetting({
+                        success: function (resSetting) {
+                            if (resSetting.authSetting["scope.userInfo"] == true) {
+                                indexView.showAll();
+                            }
+                            else {
+                                indexView.hideAll();
+                                var systemInfo = _this.getWxSystemInfo();
+                                //console.log(systemInfo);
+                                var button_1 = wx_2.createUserInfoButton({
+                                    text: '登录',
+                                    withCredentials: true,
+                                    style: {
+                                        left: systemInfo.windowWidth / 2 - 64,
+                                        top: systemInfo.windowHeight / 2 + 99,
+                                        width: 200,
+                                        height: 40,
+                                        lineHeight: 40,
+                                        backgroundColor: '#ff0000',
+                                        color: '#ffffff',
+                                        textAlign: 'center',
+                                        fontSize: 20,
+                                        borderRadius: 4
+                                    }
+                                });
+                                button_1.onTap(function (res2) {
+                                    button_1.hide();
+                                    indexView.showAll();
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
     };
     return Main;
 }());

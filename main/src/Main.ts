@@ -36,8 +36,6 @@ class Main{
         Laya.init(1334, 750, Laya.WebGL);
 
         this.initStage();
-        Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
-        Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
     }
 
     //初始化stage
@@ -59,6 +57,23 @@ class Main{
         Laya.stage.alignV = Laya.Stage.ALIGN_CENTER;
         Laya.stage.alignH = Laya.Stage.ALIGN_CENTER;
         Laya.stage.bgColor = "#627069";
+
+		if (Laya.Browser.onMiniGame) {
+            let wx = Laya.Browser.window.wx;
+            Laya.timer.once(1000, this, () => {
+                //设置共享画布大小
+                let sharedCanvas = wx.getOpenDataContext().canvas;
+                sharedCanvas.width = Laya.stage.width;
+                sharedCanvas.height = Laya.stage.height;
+                //主域往子域透传消息
+                wx.postMessage({type:"resizeShared",url:"",data:{width:Laya.stage.width,height:Laya.stage.height,matrix:Laya.stage._canvasTransform},isLoad:false});
+				Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
+        		Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
+            });
+        } else {
+			Laya.ResourceVersion.type = Laya.ResourceVersion.FILENAME_VERSION;
+        	Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.loadOpenDataResource));
+		}
     }
 
 	protected loadOpenDataResource():void
@@ -93,6 +108,46 @@ class Main{
 	{
 		let indexView = new views.Index();
 		Laya.stage.addChild(indexView);
+
+		if (Laya.Browser.onMiniGame) {
+            let wx = Laya.Browser.window.wx;
+			wx.login({
+				success: (res) => {
+					let code = res.code;
+					wx.getSetting({
+						success: (resSetting) => {
+							if (resSetting.authSetting["scope.userInfo"] == true)  {
+								indexView.showAll();
+							} else {
+								indexView.hideAll();
+								let systemInfo = this.getWxSystemInfo();
+								//console.log(systemInfo);
+								let button = wx.createUserInfoButton({
+									text: '登录',
+									withCredentials: true,
+									style: {
+										left: systemInfo.windowWidth/2 - 64,
+										top: systemInfo.windowHeight/2 + 99,
+										width: 200,
+										height: 40,
+										lineHeight: 40,
+										backgroundColor: '#ff0000',
+										color: '#ffffff',
+										textAlign: 'center',
+										fontSize: 20,
+										borderRadius: 4
+									}
+								})
+								button.onTap((res2) => {
+									button.hide();
+									indexView.showAll();
+								})
+							}
+						}
+					});
+				}
+			});
+		}
 	}
 }
 
