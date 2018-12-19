@@ -4,6 +4,7 @@
 class Main{
 	protected wxSystemInfo:any = null;
     protected static instance:Main;
+    protected openDataNeedReload:boolean = true;
 
     public static GetInstance():Main
     {
@@ -15,8 +16,25 @@ class Main{
     }
 
     constructor()
-    {	
-       
+    {
+        this.openDataNeedReload = (this.versionCompare(Laya.version, '1.7.20') <= 0);
+    }
+
+    protected versionCompare(versionOne:string, versionTwo:string):number
+    {
+        let arrOne = versionOne.split('.');
+        let arrTwo = versionTwo.split('.');
+        for (let i = 0, len = arrOne.length; i < len; i++) {
+            let numberOne = parseInt(arrOne[i]);
+            let numberTwo = parseInt(arrTwo[i]);
+            if (numberOne < numberTwo) {
+                return -1;
+            } else if (numberOne > numberTwo) {
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
 	public getWxSystemInfo():any
@@ -78,17 +96,26 @@ class Main{
 
 	protected loadOpenDataResource():void
 	{
-		Laya.loader.load("rankRes/rank.atlas", Laya.Handler.create(this, this.openDataHandle), null, Laya.Loader.ATLAS);
+        //Laya.URL.basePath = "http://test.mine.cn/opendata/";
+		Laya.loader.load(this.openDataNeedReload ? "rankRes/rank.atlas" : "res/atlas/rank.atlas", Laya.Handler.create(this, this.openDataHandle), null, Laya.Loader.ATLAS);
 	}
 
 	protected openDataHandle():void
     {
         if (Laya.Browser.onMiniGame) {
             let wx = Laya.Browser.window.wx;
-            let urlArr = ["rankRes/rank.atlas"];
-            for (let i = 0; i < urlArr.length; i++) {
-                wx.postMessage({url:urlArr[i], data:Laya.loader.getRes(urlArr[i]),isLoad:"filedata"});
+            if (this.openDataNeedReload) {
+                let urlArr = ["rankRes/rank.atlas"];
+                for (let i = 0; i < urlArr.length; i++) {
+                    wx.postMessage({url:urlArr[i], data:Laya.loader.getRes(urlArr[i]),isLoad:"filedata"});
+                }
+            } else {
+                let urlArr = ["res/atlas/rank.atlas"];
+                for (let i = 0; i < urlArr.length; i++) {
+                    (Laya.MiniAdpter as any).sendAtlasToOpenDataContext(urlArr[i]);
+                }
             }
+            
             wx.postMessage({cmd:"loadRes"});
         }
         this.loadResource();
