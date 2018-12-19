@@ -8,6 +8,7 @@ rd /s /q %srcDir%\libs
 del /f /s /q %srcDir%\js\*.*
 rd /s /q %srcDir%\js
 
+md %srcDir%\rankRes
 Xcopy %binDir%\rankRes %srcDir%\rankRes /s /e /y
 
 Xcopy %srcDir% %dstDir% /s /e /y
