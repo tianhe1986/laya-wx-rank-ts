@@ -4,6 +4,7 @@
 class Main{
 	protected wxSystemInfo:any = null;
     protected static instance:Main;
+    protected needReload:boolean = true;
 	//排行页
     protected rankView:laya.ui.View= null;
 
@@ -17,8 +18,25 @@ class Main{
     }
 
     constructor()
-    {	
-       
+    {
+        this.needReload = (this.versionCompare(Laya.version, '1.7.20') <= 0);
+    }
+
+    protected versionCompare(versionOne:string, versionTwo:string):number
+    {
+        let arrOne = versionOne.split('.');
+        let arrTwo = versionTwo.split('.');
+        for (let i = 0, len = arrOne.length; i < len; i++) {
+            let numberOne = parseInt(arrOne[i]);
+            let numberTwo = parseInt(arrTwo[i]);
+            if (numberOne < numberTwo) {
+                return -1;
+            } else if (numberOne > numberTwo) {
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
 	public getWxSystemInfo():any
@@ -37,8 +55,7 @@ class Main{
         Laya.MiniAdpter.init(true, true);
         Laya.init(1334, 750);
 
-		this.initOpenData();
-
+        this.initOpenData();
         this.initStage();
     }
 
@@ -111,8 +128,6 @@ class Main{
         }
     }
 
-	protected 
-
 	public initOpenData():void
 	{
 		if (Laya.Browser.onMiniGame) {
@@ -133,7 +148,18 @@ class Main{
 				} else {
 					if (data['isLoad'] == "filedata") {
 						MiniFileMgr.ziyuFileData[data.url] = data.data;//文本数据
-					} else if (data['isLoad'] == "filenative") {
+					} else if(data['isLoad']=="opendatacontext"){
+                        if(data.url){
+                            MiniFileMgr.ziyuFileData[data.url]=data.atlasdata;
+                            (MiniFileMgr as any).ziyuFileTextureData[data.imgReadyUrl]=data.imgNativeUrl;
+                        }
+                    }else if(data['isLoad']=="openJsondatacontext"){
+                        if(data.url){
+                            MiniFileMgr.ziyuFileData[data.url]=data.atlasdata;
+                        }
+                    }else if(data['isLoad']=="openJsondatacontextPic"){
+                        (MiniFileMgr as any).ziyuFileTextureData[data.imgReadyUrl]=data.imgNativeUrl;
+                    } else if (data['isLoad'] == "filenative") {
 						if(data.isAdd)
 							MiniFileMgr.filesListObj[data.url] = data.data;
 						else
@@ -154,7 +180,7 @@ class Main{
 
     protected loadResource():void
     {
-        Laya.loader.load("rankRes/rank.atlas", Laya.Handler.create(this, this.loadEnd), null, Laya.Loader.ATLAS);
+        Laya.loader.load(this.needReload ? "rankRes/rank.atlas" : "res/atlas/rank.atlas", Laya.Handler.create(this, this.loadEnd), null, Laya.Loader.ATLAS);
     }
 
     protected loadEnd():void
